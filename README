@@ -1,0 +1,14 @@
+Download and process data on county-to-county migration from the IRS. Downloads all years, populates a PostgreSQL database and constructs a view useful for comparing the in- and out-flow of a pair of counties side by side. It uses Postgres because an outer join is necessary.
+
+This goes up to the 2008-2009 year, but you'll only need to modify one line to add in the name of new years as they become available.
+
+If you don't want to run this script yourself but just want some data, there's a CSV here:
+https://s3.amazonaws.com/wtmedia/migration/migration_withnames.csv.zip
+
+This Python script and Postgres views were created for use in a Washington Times article.
+
+Released under the GNU license.
+
+Luke Rosiak
+September 2011
+
