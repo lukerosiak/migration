@@ -48,7 +48,11 @@ class MigrationDownload:
          SELECT m.record_year, fips_in.fips in_fips, fips_out.fips out_fips, fips_in.county_name in_dest_county, fips_in.state_name in_dest_state, fips_out.county_name out_dest_county, fips_out.state_name out_dest_state, 
          in_fam, in_indivs, in_income, in_fam_income,in_fam_size,
         out_fam, out_indivs, out_income, out_fam_income, out_fam_size,
-        in_fam_size-out_fam_size bal_fam_size, in_fam_income-out_fam_income bal_fam_income
+        COALESCE(in_fam,0)-COALESCE(out_fam,0) bal_fam,
+        COALESCE(in_income,0)-COALESCE(out_income,0) bal_income,
+        COALESCE(in_indivs,0)-COALESCE(out_indivs,0) bal_indivs,
+        in_fam_size-out_fam_size bal_fam_size, 
+        in_fam_income-out_fam_income bal_fam_income
          FROM migration_inout m LEFT JOIN migration_fips fips_in ON (m.in_state_dest=fips_in.state AND m.in_county_dest=fips_in.county) LEFT JOIN migration_fips fips_out ON (m.out_state_dest=fips_out.state AND m.out_county_dest=fips_out.county)""" ]
          
         for statement in sql:
