@@ -6,6 +6,7 @@ If you don't want to run this script yourself but just want some data, there's a
 https://s3.amazonaws.com/wtmedia/migration/migration_withnames.csv.zip
 
 This Python script and Postgres views were created for use in a Washington Times article.
+http://www.washingtontimes.com/news/2011/oct/9/fairfaxs-wealthy-are-moving-on-up-and-out/?page=all
 
 Released under the GNU license.
 
