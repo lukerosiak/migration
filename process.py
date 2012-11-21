@@ -17,18 +17,18 @@ class MigrationDownload:
 
     def download(self):
         
-        sql = ["""DROP TABLE IF EXISTS migration_in""",
+        sql = ["""DROP TABLE IF EXISTS migration_in CASCADE""",
         """CREATE TABLE migration_in (year int, state_dest varchar(2), county_dest varchar(3),    
         state_origin varchar(2), county_origin varchar(3), fam_num int, indivs_num int, income_num int,
         fam_income float, fam_size float)""", 
         """ALTER TABLE migration_in ADD CONSTRAINT migration_in_key UNIQUE (year,state_dest,county_dest,state_origin,county_origin)""",
-        """DROP TABLE IF EXISTS migration_out""",
+        """DROP TABLE IF EXISTS migration_out CASCADE""",
         """CREATE TABLE migration_out (year int, state_origin varchar(2), county_origin varchar(3),    
         state_dest varchar(2), county_dest varchar(3), fam_num int, indivs_num int, income_num int,
         fam_income float, fam_size float)""", 
         
         """ALTER TABLE migration_out ADD CONSTRAINT migration_out_key UNIQUE (year,state_dest,county_dest,state_origin,county_origin)""",
-        """DROP TABLE IF EXISTS migration_fips""",
+        """DROP TABLE IF EXISTS migration_fips CASCADE""",
         """CREATE TABLE migration_fips (fips varchar(5), state varchar(2) NOT NULL, county varchar(3) NOT NULL, 
         county_name varchar(50), state_name varchar(30))""",
         """ALTER TABLE migration_fips ADD CONSTRAINT fips_key PRIMARY KEY (fips)""",
@@ -60,9 +60,10 @@ class MigrationDownload:
             self.conn.commit()
 
         #add new years here as necessary
-        years = ['0405','0506','0607','0708','0809']
+        years = ['0910',] #['0405','0506','0607','0708','0809']
         for year in years:
 
+            print 'downloading http://www.irs.gov/pub/irs-soi/countyinflow%s.csv' % year
             read = csv.reader( urllib2.urlopen('http://www.irs.gov/pub/irs-soi/countyinflow%s.csv' % year))
             read.next() #skip header
             for row in read:
@@ -74,6 +75,7 @@ class MigrationDownload:
                     self.cursor.execute( sql, outrow )
             self.conn.commit()
 
+            print 'downloading http://www.irs.gov/pub/irs-soi/countyoutflow%s.csv' % year
             read = csv.reader( urllib2.urlopen('http://www.irs.gov/pub/irs-soi/countyoutflow%s.csv' % year))
             read.next() #skip header
             for row in read:
@@ -87,10 +89,12 @@ class MigrationDownload:
             
         for state in self.fips.keys():
             for county in self.fips[state]['counties'].keys():
-                fips = state+county
-                sql = "INSERT INTO migration_fips VALUES (%s,%s,%s,%s,%s)"
-                row = (fips,state,county,self.fips[state]['counties'][county].decode('UTF-8','replace'),self.fips[state]['name'])
-                self.cursor.execute( sql, row )        
+                fips =  '%s%s' % (state.zfill(2),county.zfill(3))
+                print fips
+                if len(fips)==5:
+                    sql = "INSERT INTO migration_fips VALUES (%s,%s,%s,%s,%s)"
+                    row = (fips,state,county,self.fips[state]['counties'][county].decode('UTF-8','replace'),self.fips[state]['name'])
+                    self.cursor.execute( sql, row )        
         self.conn.commit()     
 
     def processrow(self,year,row):
@@ -103,8 +107,9 @@ class MigrationDownload:
         except:
             families, fam_income, fam_size = None, None, None
         try:
-            outrow = [year, row[0], row[1], row[2], row[3], row[6], row[7], row[8], fam_income, fam_size]
+            outrow = [year, row[0].zfill(2), row[1].zfill(3), row[2].zfill(2), row[3].zfill(3), row[6], row[7], row[8], fam_income, fam_size]
         except:
+            print row
             return None
         return outrow
 
@@ -112,6 +117,10 @@ class MigrationDownload:
         state, county, state_name, county_name = code
         if state in ['96','97','98','99']:
             return
+            
+        state = state.zfill(2)
+        county = county.zfill(3)
+        
         if state not in self.fips:
             self.fips[state] =  {'name': state_name, 'counties': {}}
         self.fips[state]['counties'][county] = county_name
